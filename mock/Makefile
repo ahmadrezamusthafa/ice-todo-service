@@ -1,6 +1,6 @@
-.PHONY: all mockgen-todo mockgen-file mockgen-todo-repo mockgen-file-repo mockgen-stream-repo mockgen-validator mockgen-mysql mockgen-redis mockgen-s3 mockgen-mysql-adapter mockgen-redis-adapter mockgen-s3-adapter mockgen-todo-handler mockgen-file-handler
+.PHONY: all mockgen-todo mockgen-file mockgen-todo-repo mockgen-file-repo mockgen-stream-repo mockgen-logger mockgen-validator mockgen-mysql mockgen-redis mockgen-s3 mockgen-fiber mockgen-mysql-adapter mockgen-redis-adapter mockgen-s3-adapter mockgen-todo-handler mockgen-file-handler
 
-all: mockgen-todo mockgen-file mockgen-todo-repo mockgen-file-repo mockgen-stream-repo mockgen-validator mockgen-mysql mockgen-redis mockgen-s3 mockgen-mysql-adapter mockgen-redis-adapter mockgen-s3-adapter mockgen-todo-handler mockgen-file-handler
+all: mockgen-todo mockgen-file mockgen-todo-repo mockgen-file-repo mockgen-stream-repo mockgen-logger mockgen-validator mockgen-mysql mockgen-redis mockgen-s3 mockgen-fiber mockgen-mysql-adapter mockgen-redis-adapter mockgen-s3-adapter mockgen-todo-handler mockgen-file-handler
 
 mockgen-todo:
 	mkdir -p usecase
@@ -22,6 +22,10 @@ mockgen-stream-repo:
 	mkdir -p repository
 	mockgen -package=mock_repository -source=../domain/repository/stream_repository.go -destination=repository/mock_stream_repository.go
 
+mockgen-logger:
+	mkdir -p infrastructure
+	mockgen -package=mock_infrastructure -source=../infrastructure/logger/logger.go -destination=infrastructure/mock_logger.go
+
 mockgen-validator:
 	mkdir -p validator
 	mockgen -package=mock_validator -source=../domain/validator/validator.go -destination=validator/mock_validator.go
@@ -37,6 +41,10 @@ mockgen-redis:
 mockgen-s3:
 	mkdir -p infrastructure/storage
 	mockgen -package=mock_storage -source=../infrastructure/storage/s3.go -destination=infrastructure/storage/mock_s3.go
+
+mockgen-fiber:
+	mkdir -p infrastructure/server
+	mockgen -package=mock_server -source=../infrastructure/server/fiber.go -destination=infrastructure/server/mock_fiber.go
 
 mockgen-mysql-adapter:
 	mkdir -p adapter/persistence/mysql
