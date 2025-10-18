@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/api"
 	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/persistence/mysql"
 	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/persistence/redis"
 	"github.com/ahmadrezamusthafa/ice-todo-service/config"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/database"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/logger"
+	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/server"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/storage"
 	"github.com/ahmadrezamusthafa/ice-todo-service/usecase"
 )
@@ -44,6 +46,13 @@ func main() {
 
 	todoUseCase := usecase.NewTodoUseCase(todoRepo, streamRepo, log)
 
-	fmt.Println(db, redisClient)
-	fmt.Println(uploader, downloader, todoUseCase)
+	todoHandler := api.NewTodoHandler(todoUseCase, log)
+
+	fmt.Println(uploader, downloader)
+
+	srv := server.NewFiberServer(cfg, log)
+	srv.RegisterHandlers(todoHandler)
+	if err := srv.Start(); err != nil {
+		log.Fatal("Server failed: %v", err)
+	}
 }
