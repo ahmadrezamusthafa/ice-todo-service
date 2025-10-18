@@ -5,6 +5,7 @@ import (
 	"github.com/ahmadrezamusthafa/ice-todo-service/config"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/database"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/logger"
+	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/storage"
 )
 
 func main() {
@@ -29,5 +30,12 @@ func main() {
 	}
 	defer redisConnector.Close()
 
+	s3Connector := storage.NewS3Connector(cfg, log)
+	uploader, downloader, err := s3Connector.Connect()
+	if err != nil {
+		log.Fatal("Failed to connect to S3: %v", err)
+	}
+
 	fmt.Println(db, redisClient)
+	fmt.Println(uploader, downloader)
 }

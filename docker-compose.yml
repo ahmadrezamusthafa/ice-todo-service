@@ -39,10 +39,12 @@ services:
       - SERVICES=s3
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - TMPDIR=/tmp/localstack-tmp
     volumes:
-      - localstack-data:/tmp/localstack
+      - "${TMPDIR:-/tmp}/localstack:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
 
 volumes:
   mysql-data:
   redis-data:
-  localstack-data:
