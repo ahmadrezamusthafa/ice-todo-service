@@ -35,6 +35,20 @@ func (uc *TodoUseCase) CreateTodo(todo *entity.TodoItem) (*entity.TodoItem, erro
 	return createdTodo, nil
 }
 
+func (uc *TodoUseCase) UpdateTodo(id uuid.UUID, todo *entity.TodoItem) (*entity.TodoItem, error) {
+	updatedTodo, err := uc.todoRepo.Update(id, todo)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = uc.publishToStream(updatedTodo)
+	if err != nil {
+		uc.logger.Error("Failed to publish updated todo to stream: %v", err)
+	}
+
+	return updatedTodo, nil
+}
+
 func (uc *TodoUseCase) GetTodoByID(id uuid.UUID) (*entity.TodoItem, error) {
 	return uc.todoRepo.GetByID(id)
 }

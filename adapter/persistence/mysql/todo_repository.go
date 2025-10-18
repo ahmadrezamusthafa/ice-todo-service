@@ -56,3 +56,14 @@ func (r *TodoRepository) GetByID(id uuid.UUID) (*entity.TodoItem, error) {
 		FileID:      fileID,
 	}, nil
 }
+
+func (r *TodoRepository) Update(id uuid.UUID, todo *entity.TodoItem) (*entity.TodoItem, error) {
+	query := `UPDATE todo_items SET description = ?, due_date = ? WHERE id = ?`
+
+	_, err := r.db.Exec(query, todo.Description, todo.DueDate, todo.FileID, id.String())
+	if err != nil {
+		return nil, err
+	}
+
+	return todo, nil
+}

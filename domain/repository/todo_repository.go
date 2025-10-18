@@ -8,4 +8,5 @@ import (
 type TodoRepository interface {
 	Create(todo *entity.TodoItem) (*entity.TodoItem, error)
 	GetByID(id uuid.UUID) (*entity.TodoItem, error)
+	Update(id uuid.UUID, todo *entity.TodoItem) (*entity.TodoItem, error)
 }

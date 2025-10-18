@@ -13,5 +13,4 @@ type CreateTodoRequest struct {
 type UpdateTodoRequest struct {
 	Description *string    `json:"description,omitempty"`
 	DueDate     *time.Time `json:"dueDate,omitempty"`
-	Completed   *bool      `json:"completed,omitempty"`
 }

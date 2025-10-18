@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/api"
 	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/dto"
 	"github.com/ahmadrezamusthafa/ice-todo-service/config"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/logger"
@@ -13,8 +12,6 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
 type FiberServer struct {
@@ -39,15 +36,6 @@ func NewFiberServer(config *config.Config, logger logger.Logger) *FiberServer {
 		logger: logger,
 		app:    app,
 	}
-}
-
-func (s *FiberServer) RegisterHandlers(todoHandler *api.TodoHandler, fileHandler *api.FileHandler) {
-	s.app.Use(cors.New())
-	s.app.Use(recover.New())
-	s.app.Use(createLoggerMiddleware(s.logger))
-
-	s.app.Post("/todo", todoHandler.CreateTodo)
-	s.app.Post("/upload", fileHandler.UploadFile)
 }
 
 func (s *FiberServer) Start() error {
