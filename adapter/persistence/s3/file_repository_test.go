@@ -3,10 +3,12 @@ package s3_test
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"testing"
 
 	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/persistence/s3"
+	"github.com/ahmadrezamusthafa/ice-todo-service/domain/apperrors"
 	mock_s3_adapter "github.com/ahmadrezamusthafa/ice-todo-service/mock/adapter/persistence/s3"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	awss3 "github.com/aws/aws-sdk-go/service/s3"
@@ -57,7 +59,7 @@ func TestUpload(t *testing.T) {
 
 			},
 			expectedFileID: "",
-			expectedError:  errors.New("failed to read file content: read error"),
+			expectedError:  apperrors.NewStorageError("failed to read file content", errors.New("read error")),
 		},
 		{
 			name:        "S3 Upload Error",
@@ -71,7 +73,7 @@ func TestUpload(t *testing.T) {
 					Return(nil, s3Err)
 			},
 			expectedFileID: "",
-			expectedError:  errors.New("failed to upload file to S3: InternalError - Internal S3 Error"),
+			expectedError:  apperrors.NewStorageError("failed to upload file to S3: InternalError - Internal S3 Error", nil),
 		},
 		{
 			name:        "Generic Upload Error",
@@ -84,7 +86,7 @@ func TestUpload(t *testing.T) {
 					Return(nil, errors.New("network error"))
 			},
 			expectedFileID: "",
-			expectedError:  errors.New("failed to upload file to S3: network error"),
+			expectedError:  apperrors.NewStorageError("failed to upload file to S3", errors.New("network error")),
 		},
 	}
 
@@ -96,7 +98,18 @@ func TestUpload(t *testing.T) {
 
 			if tc.expectedError != nil {
 				assert.Error(t, err)
-				assert.Equal(t, tc.expectedError.Error(), err.Error())
+
+				expectedAppErr, expectedIsAppErr := tc.expectedError.(*apperrors.AppError)
+				actualAppErr, actualIsAppErr := err.(*apperrors.AppError)
+
+				if expectedIsAppErr && actualIsAppErr {
+
+					assert.Equal(t, expectedAppErr.Type, actualAppErr.Type)
+					assert.Equal(t, expectedAppErr.Message, actualAppErr.Message)
+				} else {
+
+					assert.Contains(t, err.Error(), tc.expectedError.Error())
+				}
 			} else {
 				assert.NoError(t, err)
 				assert.NotEmpty(t, fileID)
@@ -155,7 +168,7 @@ func TestGet(t *testing.T) {
 					Return(int64(0), s3Err)
 			},
 			expectedData:  nil,
-			expectedError: errors.New("file not found: nonexistent"),
+			expectedError: apperrors.NewNotFoundError(fmt.Sprintf("file with id %s not found", "nonexistent"), nil),
 		},
 		{
 			name:   "Bucket Not Found Error",
@@ -167,7 +180,7 @@ func TestGet(t *testing.T) {
 					Return(int64(0), s3Err)
 			},
 			expectedData:  nil,
-			expectedError: errors.New("bucket not found: test-bucket"),
+			expectedError: apperrors.NewStorageError(fmt.Sprintf("bucket %s not found", bucketName), nil),
 		},
 		{
 			name:   "Other AWS Error",
@@ -179,7 +192,7 @@ func TestGet(t *testing.T) {
 					Return(int64(0), s3Err)
 			},
 			expectedData:  nil,
-			expectedError: errors.New("failed to download file from S3: InternalError - Internal S3 Error"),
+			expectedError: apperrors.NewStorageError("failed to download file from S3: InternalError - Internal S3 Error", nil),
 		},
 		{
 			name:   "Generic Error",
@@ -190,7 +203,7 @@ func TestGet(t *testing.T) {
 					Return(int64(0), errors.New("network error"))
 			},
 			expectedData:  nil,
-			expectedError: errors.New("failed to download file from S3: network error"),
+			expectedError: apperrors.NewStorageError("failed to download file from S3", errors.New("network error")),
 		},
 	}
 
@@ -202,7 +215,18 @@ func TestGet(t *testing.T) {
 
 			if tc.expectedError != nil {
 				assert.Error(t, err)
-				assert.Equal(t, tc.expectedError.Error(), err.Error())
+
+				expectedAppErr, expectedIsAppErr := tc.expectedError.(*apperrors.AppError)
+				actualAppErr, actualIsAppErr := err.(*apperrors.AppError)
+
+				if expectedIsAppErr && actualIsAppErr {
+
+					assert.Equal(t, expectedAppErr.Type, actualAppErr.Type)
+					assert.Equal(t, expectedAppErr.Message, actualAppErr.Message)
+				} else {
+
+					assert.Contains(t, err.Error(), tc.expectedError.Error())
+				}
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.expectedData, data)

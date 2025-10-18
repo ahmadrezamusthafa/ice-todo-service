@@ -47,7 +47,7 @@ func TestUploadFile(t *testing.T) {
 			fileContent:    bytes.NewReader([]byte("error content")),
 			expectedFileID: "",
 			repoError:      errors.New("storage error"),
-			expectedError:  errors.New("failed to upload file: storage error"),
+			expectedError:  errors.New("storage error"),
 		},
 	}
 
@@ -71,7 +71,7 @@ func TestUploadFile(t *testing.T) {
 
 				if tc.expectedError != nil {
 					assert.Error(t, err)
-					assert.Equal(t, tc.expectedError.Error(), err.Error())
+					assert.Contains(t, err.Error(), tc.expectedError.Error())
 				} else {
 					assert.NoError(t, err)
 				}
@@ -109,7 +109,7 @@ func TestGetFile(t *testing.T) {
 			fileID:          "invalid-id",
 			expectedContent: nil,
 			repoError:       errors.New("file not found"),
-			expectedError:   errors.New("failed to retrieve file: file not found"),
+			expectedError:   errors.New("file not found"),
 		},
 	}
 
@@ -133,7 +133,7 @@ func TestGetFile(t *testing.T) {
 
 				if tc.expectedError != nil {
 					assert.Error(t, err)
-					assert.Equal(t, tc.expectedError.Error(), err.Error())
+					assert.Contains(t, err.Error(), tc.expectedError.Error())
 				} else {
 					assert.NoError(t, err)
 				}

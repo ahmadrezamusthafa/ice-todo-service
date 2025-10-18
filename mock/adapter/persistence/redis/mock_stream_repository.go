@@ -48,3 +48,17 @@ func (mr *MockStreamInterfaceMockRecorder) XAdd(ctx, a interface{}) *gomock.Call
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "XAdd", reflect.TypeOf((*MockStreamInterface)(nil).XAdd), ctx, a)
 }
+
+// XRead mocks base method.
+func (m *MockStreamInterface) XRead(ctx context.Context, a *redis.XReadArgs) *redis.XStreamSliceCmd {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "XRead", ctx, a)
+	ret0, _ := ret[0].(*redis.XStreamSliceCmd)
+	return ret0
+}
+
+// XRead indicates an expected call of XRead.
+func (mr *MockStreamInterfaceMockRecorder) XRead(ctx, a interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "XRead", reflect.TypeOf((*MockStreamInterface)(nil).XRead), ctx, a)
+}

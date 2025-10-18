@@ -9,6 +9,7 @@ import (
 
 type StreamInterface interface {
 	XAdd(ctx context.Context, a *redis.XAddArgs) *redis.StringCmd
+	XRead(ctx context.Context, a *redis.XReadArgs) *redis.XStreamSliceCmd
 }
 
 type StreamRepository struct {
@@ -40,4 +41,38 @@ func (r *StreamRepository) Publish(streamName string, data map[string]interface{
 	})
 
 	return result.Result()
+}
+
+func (r *StreamRepository) GetStream(streamName string, count int64, start string) ([]map[string]interface{}, error) {
+	ctx := context.Background()
+	if start == "" {
+		start = "0"
+	}
+
+	streams := []string{streamName, start}
+	result := r.client.XRead(ctx, &redis.XReadArgs{
+		Streams: streams,
+		Count:   count,
+		Block:   0,
+	})
+
+	xStreams, err := result.Result()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read stream: %w", err)
+	}
+
+	messages := []map[string]interface{}{}
+	for _, xStream := range xStreams {
+		for _, xMessage := range xStream.Messages {
+			msg := make(map[string]interface{})
+			for k, v := range xMessage.Values {
+				msg[k] = v
+			}
+
+			msg["id"] = xMessage.ID
+			messages = append(messages, msg)
+		}
+	}
+
+	return messages, nil
 }

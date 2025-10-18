@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
-func (s *FiberServer) RegisterHandlers(todoHandler *api.TodoHandler, fileHandler *api.FileHandler) {
+func (s *FiberServer) RegisterHandlers(todoHandler *api.TodoHandler, fileHandler *api.FileHandler, streamHandler *api.StreamHandler) {
 	s.app.Use(cors.New())
 	s.app.Use(recover.New())
 	s.app.Use(createLoggerMiddleware(s.logger))
@@ -19,4 +19,6 @@ func (s *FiberServer) RegisterHandlers(todoHandler *api.TodoHandler, fileHandler
 
 	s.app.Post("/upload", fileHandler.UploadFile)
 	s.app.Get("/file/:id", fileHandler.GetFile)
+
+	s.app.Get("/stream", streamHandler.GetStreamData)
 }

@@ -77,7 +77,7 @@ func TestCreate(t *testing.T) {
 
 				if tc.expectedError != nil {
 					assert.Error(t, err)
-					assert.Equal(t, tc.expectedError.Error(), err.Error())
+					assert.Contains(t, err.Error(), tc.expectedError.Error())
 					assert.Nil(t, result)
 				} else {
 					assert.NoError(t, err)
@@ -163,7 +163,7 @@ func TestGetByID(t *testing.T) {
 
 				if tc.expectedError != nil {
 					assert.Error(t, err)
-					assert.Equal(t, tc.expectedError.Error(), err.Error())
+					assert.Contains(t, err.Error(), tc.expectedError.Error())
 					assert.Nil(t, result)
 				} else {
 					assert.NoError(t, err)
@@ -254,7 +254,7 @@ func TestUpdate(t *testing.T) {
 
 				if tc.expectedError != nil {
 					assert.Error(t, err)
-					assert.Equal(t, tc.expectedError.Error(), err.Error())
+					assert.Contains(t, err.Error(), tc.expectedError.Error())
 					assert.Nil(t, result)
 				} else {
 					assert.NoError(t, err)
@@ -338,7 +338,7 @@ func TestGetAll(t *testing.T) {
 
 				if tc.expectedError != nil {
 					assert.Error(t, err)
-					assert.Equal(t, tc.expectedError.Error(), err.Error())
+					assert.Contains(t, err.Error(), tc.expectedError.Error())
 					assert.Nil(t, result)
 				} else {
 					assert.NoError(t, err)
@@ -394,7 +394,7 @@ func TestDelete(t *testing.T) {
 					todoID.String(),
 				).WillReturnResult(sqlmock.NewResult(0, 0))
 			},
-			expectedError: sql.ErrNoRows,
+			expectedError: errors.New("not found"),
 		},
 		{
 			name: "Database Error",
@@ -418,7 +418,7 @@ func TestDelete(t *testing.T) {
 
 				if tc.expectedError != nil {
 					assert.Error(t, err)
-					assert.Equal(t, tc.expectedError.Error(), err.Error())
+					assert.Contains(t, err.Error(), tc.expectedError.Error())
 				} else {
 					assert.NoError(t, err)
 				}

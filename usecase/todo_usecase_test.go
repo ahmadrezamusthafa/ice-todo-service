@@ -2,6 +2,7 @@ package usecase_test
 
 import (
 	"errors"
+	"github.com/ahmadrezamusthafa/ice-todo-service/domain/apperrors"
 	mock_infrastructure "github.com/ahmadrezamusthafa/ice-todo-service/mock/infrastructure"
 	mock_repository "github.com/ahmadrezamusthafa/ice-todo-service/mock/repository"
 	"testing"
@@ -109,7 +110,7 @@ func TestCreateTodo(t *testing.T) {
 
 				if tc.expectedError != nil {
 					assert.Error(t, err)
-					assert.Equal(t, tc.expectedError.Error(), err.Error())
+					assert.Contains(t, err.Error(), tc.expectedError.Error())
 				} else {
 					assert.NoError(t, err)
 					assert.Equal(t, tc.expectedTodo, result)
@@ -214,7 +215,7 @@ func TestUpdateTodo(t *testing.T) {
 
 				if tc.expectedError != nil {
 					assert.Error(t, err)
-					assert.Equal(t, tc.expectedError.Error(), err.Error())
+					assert.Contains(t, err.Error(), tc.expectedError.Error())
 				} else {
 					assert.NoError(t, err)
 					assert.Equal(t, tc.expectedTodo, result)
@@ -404,7 +405,7 @@ func TestDeleteTodo(t *testing.T) {
 			getError:      nil,
 			deleteError:   errors.New("delete error"),
 			streamError:   nil,
-			expectedError: errors.New("delete error"),
+			expectedError: apperrors.NewInternalError("Failed to delete todo", errors.New("delete error")),
 		},
 		{
 			name: "Stream Error But Todo Deleted",

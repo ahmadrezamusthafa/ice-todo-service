@@ -33,6 +33,21 @@ func (m *MockStreamRepository) EXPECT() *MockStreamRepositoryMockRecorder {
 	return m.recorder
 }
 
+// GetStream mocks base method.
+func (m *MockStreamRepository) GetStream(streamName string, count int64, start string) ([]map[string]interface{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStream", streamName, count, start)
+	ret0, _ := ret[0].([]map[string]interface{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetStream indicates an expected call of GetStream.
+func (mr *MockStreamRepositoryMockRecorder) GetStream(streamName, count, start interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStream", reflect.TypeOf((*MockStreamRepository)(nil).GetStream), streamName, count, start)
+}
+
 // Publish mocks base method.
 func (m *MockStreamRepository) Publish(streamName string, data map[string]interface{}) (string, error) {
 	m.ctrl.T.Helper()

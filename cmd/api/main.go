@@ -50,12 +50,14 @@ func main() {
 
 	todoUseCase := usecase.NewTodoUseCase(todoRepo, streamRepo, log)
 	fileUseCase := usecase.NewFileUseCase(fileRepo, log)
+	streamUseCase := usecase.NewStreamUseCase(streamRepo, log)
 
 	todoHandler := api.NewTodoHandler(todoUseCase, log)
 	fileHandler := api.NewFileHandler(fileUseCase, fileValidator.MaxFileSize, log)
+	streamHandler := api.NewStreamHandler(streamUseCase, log)
 
 	srv := server.NewFiberServer(cfg, log)
-	srv.RegisterHandlers(todoHandler, fileHandler)
+	srv.RegisterHandlers(todoHandler, fileHandler, streamHandler)
 	if err := srv.Start(); err != nil {
 		log.Fatal("Server failed: %v", err)
 	}

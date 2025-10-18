@@ -1,6 +1,6 @@
-.PHONY: all mockgen-todo mockgen-file mockgen-todo-repo mockgen-file-repo mockgen-stream-repo mockgen-logger mockgen-validator mockgen-mysql mockgen-redis mockgen-s3 mockgen-fiber mockgen-mysql-adapter mockgen-redis-adapter mockgen-s3-adapter mockgen-todo-handler mockgen-file-handler
+.PHONY: all mockgen-todo mockgen-file mockgen-stream mockgen-todo-repo mockgen-file-repo mockgen-stream-repo mockgen-logger mockgen-validator mockgen-mysql mockgen-redis mockgen-s3 mockgen-fiber mockgen-mysql-adapter mockgen-redis-adapter mockgen-s3-adapter mockgen-todo-handler mockgen-file-handler
 
-all: mockgen-todo mockgen-file mockgen-todo-repo mockgen-file-repo mockgen-stream-repo mockgen-logger mockgen-validator mockgen-mysql mockgen-redis mockgen-s3 mockgen-fiber mockgen-mysql-adapter mockgen-redis-adapter mockgen-s3-adapter mockgen-todo-handler mockgen-file-handler
+all: mockgen-todo mockgen-file mockgen-stream mockgen-todo-repo mockgen-file-repo mockgen-stream-repo mockgen-logger mockgen-validator mockgen-mysql mockgen-redis mockgen-s3 mockgen-fiber mockgen-mysql-adapter mockgen-redis-adapter mockgen-s3-adapter mockgen-todo-handler mockgen-file-handler
 
 mockgen-todo:
 	mkdir -p usecase
@@ -9,6 +9,10 @@ mockgen-todo:
 mockgen-file:
 	mkdir -p usecase
 	mockgen -package=mock_usecase -source=../usecase/file_usecase.go -destination=usecase/mock_file_usecase.go
+
+mockgen-stream:
+	mkdir -p usecase
+	mockgen -package=mock_usecase -source=../usecase/stream_usecase.go -destination=usecase/mock_stream_usecase.go
 
 mockgen-todo-repo:
 	mkdir -p repository

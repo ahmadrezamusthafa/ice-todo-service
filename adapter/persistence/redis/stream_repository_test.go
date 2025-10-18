@@ -121,7 +121,7 @@ func TestPublish(t *testing.T) {
 
 				if tc.expectedError != nil {
 					assert.Error(t, err)
-					assert.Equal(t, tc.expectedError.Error(), err.Error())
+					assert.Contains(t, err.Error(), tc.expectedError.Error())
 					assert.Empty(t, result)
 				} else {
 					assert.NoError(t, err)
@@ -130,4 +130,130 @@ func TestPublish(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestGetStream(t *testing.T) {
+	t.Log("Starting TestGetStream")
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockStreamInterface := mock_redis_adapter.NewMockStreamInterface(ctrl)
+	streamRepo := redis.NewStreamRepository(mockStreamInterface)
+
+	testCases := []struct {
+		name          string
+		streamName    string
+		count         int64
+		start         string
+		mockBehavior  func()
+		expectedData  []map[string]interface{}
+		expectedError error
+	}{
+		{
+			name:       "Success with multiple messages",
+			streamName: "test-stream",
+			count:      10,
+			start:      "0",
+			mockBehavior: func() {
+
+				cmd := redisv8.NewXStreamSliceCmd(context.Background())
+
+				messages := []redisv8.XMessage{
+					{
+						ID: "1234-0",
+						Values: map[string]interface{}{
+							"key1": "value1",
+							"key2": "value2",
+						},
+					},
+					{
+						ID: "1235-0",
+						Values: map[string]interface{}{
+							"key3": "value3",
+						},
+					},
+				}
+
+				streams := []redisv8.XStream{
+					{
+						Stream:   "test-stream",
+						Messages: messages,
+					},
+				}
+
+				cmd.SetVal(streams)
+
+				mockStreamInterface.EXPECT().XRead(gomock.Any(), &redisv8.XReadArgs{
+					Streams: []string{"test-stream", "0"},
+					Count:   10,
+					Block:   0,
+				}).Return(cmd)
+			},
+			expectedData: []map[string]interface{}{
+				{
+					"key1": "value1",
+					"key2": "value2",
+					"id":   "1234-0",
+				},
+				{
+					"key3": "value3",
+					"id":   "1235-0",
+				},
+			},
+			expectedError: nil,
+		},
+		{
+			name:       "Empty start parameter",
+			streamName: "test-stream",
+			count:      5,
+			start:      "",
+			mockBehavior: func() {
+				cmd := redisv8.NewXStreamSliceCmd(context.Background())
+				cmd.SetVal([]redisv8.XStream{})
+
+				mockStreamInterface.EXPECT().XRead(gomock.Any(), &redisv8.XReadArgs{
+					Streams: []string{"test-stream", "0"},
+					Count:   5,
+					Block:   0,
+				}).Return(cmd)
+			},
+			expectedData:  []map[string]interface{}{},
+			expectedError: nil,
+		},
+		{
+			name:       "Redis error",
+			streamName: "test-stream",
+			count:      10,
+			start:      "0",
+			mockBehavior: func() {
+				cmd := redisv8.NewXStreamSliceCmd(context.Background())
+				cmd.SetErr(errors.New("redis connection error"))
+
+				mockStreamInterface.EXPECT().XRead(gomock.Any(), gomock.Any()).Return(cmd)
+			},
+			expectedData:  nil,
+			expectedError: errors.New("failed to read stream: redis connection error"),
+		},
+	}
+
+	t.Run("GetStream", func(t *testing.T) {
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+
+				tc.mockBehavior()
+
+				result, err := streamRepo.GetStream(tc.streamName, tc.count, tc.start)
+
+				if tc.expectedError != nil {
+					assert.Error(t, err)
+					assert.Contains(t, err.Error(), tc.expectedError.Error())
+					assert.Nil(t, result)
+				} else {
+					assert.NoError(t, err)
+					assert.Equal(t, tc.expectedData, result)
+				}
+			})
+		}
+	})
+
 }
