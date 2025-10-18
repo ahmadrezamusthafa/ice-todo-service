@@ -53,6 +53,37 @@ func (uc *TodoUseCase) GetTodoByID(id uuid.UUID) (*entity.TodoItem, error) {
 	return uc.todoRepo.GetByID(id)
 }
 
+func (uc *TodoUseCase) GetAllTodos() ([]*entity.TodoItem, error) {
+	return uc.todoRepo.GetAll()
+}
+
+func (uc *TodoUseCase) DeleteTodo(id uuid.UUID) error {
+	todo, err := uc.todoRepo.GetByID(id)
+	if err != nil {
+		return err
+	}
+
+	err = uc.todoRepo.Delete(id)
+	if err != nil {
+		return err
+	}
+
+	data := map[string]interface{}{
+		"id":          todo.ID.String(),
+		"description": todo.Description,
+		"dueDate":     todo.DueDate.Format("2006-01-02T15:04:05Z07:00"),
+		"fileId":      todo.FileID,
+		"deleted":     true,
+	}
+
+	_, err = uc.streamRepo.Publish("todo-stream", data)
+	if err != nil {
+		uc.logger.Error("Failed to publish todo deletion to stream: %v", err)
+	}
+
+	return nil
+}
+
 func (uc *TodoUseCase) publishToStream(todo *entity.TodoItem) (string, error) {
 	data := map[string]interface{}{
 		"id":          todo.ID.String(),

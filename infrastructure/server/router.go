@@ -11,8 +11,11 @@ func (s *FiberServer) RegisterHandlers(todoHandler *api.TodoHandler, fileHandler
 	s.app.Use(recover.New())
 	s.app.Use(createLoggerMiddleware(s.logger))
 
+	s.app.Get("/todo", todoHandler.GetAllTodos)
 	s.app.Post("/todo", todoHandler.CreateTodo)
+	s.app.Get("/todo/:id", todoHandler.GetTodo)
 	s.app.Put("/todo/:id", todoHandler.UpdateTodo)
+	s.app.Delete("/todo/:id", todoHandler.DeleteTodo)
 
 	s.app.Post("/upload", fileHandler.UploadFile)
 }

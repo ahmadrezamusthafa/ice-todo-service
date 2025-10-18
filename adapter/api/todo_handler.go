@@ -99,3 +99,48 @@ func (h *TodoHandler) UpdateTodo(c *fiber.Ctx) error {
 
 	return dto.RespondWithJSON(c, fiber.StatusOK, updatedTodo)
 }
+
+func (h *TodoHandler) GetTodo(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		return dto.RespondWithError(c, fiber.StatusBadRequest, "Invalid todo ID format")
+	}
+
+	todo, err := h.todoUseCase.GetTodoByID(id)
+	if err != nil {
+		h.logger.Error("Failed to get todo item: %v", err)
+		return dto.RespondWithError(c, fiber.StatusNotFound, "Todo item not found")
+	}
+
+	return dto.RespondWithJSON(c, fiber.StatusOK, todo)
+}
+
+func (h *TodoHandler) GetAllTodos(c *fiber.Ctx) error {
+	todos, err := h.todoUseCase.GetAllTodos()
+	if err != nil {
+		h.logger.Error("Failed to get all todo items: %v", err)
+		return dto.RespondWithError(c, fiber.StatusInternalServerError, "Failed to get todo items: internal server error")
+	}
+
+	return dto.RespondWithJSON(c, fiber.StatusOK, todos)
+}
+
+func (h *TodoHandler) DeleteTodo(c *fiber.Ctx) error {
+	idParam := c.Params("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		return dto.RespondWithError(c, fiber.StatusBadRequest, "Invalid todo ID format")
+	}
+
+	err = h.todoUseCase.DeleteTodo(id)
+	if err != nil {
+		h.logger.Error("Failed to delete todo item: %v", err)
+		return dto.RespondWithError(c, fiber.StatusInternalServerError, "Failed to delete todo item: internal server error")
+	}
+
+	return dto.RespondWithJSON(c, fiber.StatusOK, map[string]interface{}{
+		"message": "Todo item deleted successfully",
+		"id":      id.String(),
+	})
+}
