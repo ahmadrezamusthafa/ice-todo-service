@@ -58,9 +58,9 @@ func (r *TodoRepository) GetByID(id uuid.UUID) (*entity.TodoItem, error) {
 }
 
 func (r *TodoRepository) Update(id uuid.UUID, todo *entity.TodoItem) (*entity.TodoItem, error) {
-	query := `UPDATE todo_items SET description = ?, due_date = ? WHERE id = ?`
+	query := `UPDATE todo_items SET description = ?, due_date = ?, file_id = ? WHERE id = ?`
 
-	_, err := r.db.Exec(query, todo.Description, todo.DueDate, id.String())
+	_, err := r.db.Exec(query, todo.Description, todo.DueDate, todo.FileID, id.String())
 	if err != nil {
 		return nil, err
 	}

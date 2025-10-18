@@ -91,6 +91,10 @@ func (h *TodoHandler) UpdateTodo(c *fiber.Ctx) error {
 		existingTodo.DueDate = *req.DueDate
 	}
 
+	if req.FileID != "" {
+		existingTodo.FileID = req.FileID
+	}
+
 	updatedTodo, err := h.todoUseCase.UpdateTodo(id, existingTodo)
 	if err != nil {
 		h.logger.Error("Failed to update todo item: %v", err)
