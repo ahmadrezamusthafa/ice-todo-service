@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/dto"
+	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/dto/mapper"
 	"github.com/ahmadrezamusthafa/ice-todo-service/domain/validator"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/logger"
 	"github.com/ahmadrezamusthafa/ice-todo-service/usecase"
@@ -65,7 +66,8 @@ func (h *FileHandler) UploadFile(c *fiber.Ctx) error {
 		return dto.RespondWithError(c, fiber.StatusInternalServerError, "Failed to upload file: internal server error")
 	}
 
-	return dto.RespondWithJSON(c, fiber.StatusCreated, map[string]string{"fileId": fileID})
+	response := mapper.FileToUploadResponse(fileID, file)
+	return dto.RespondWithJSON(c, fiber.StatusCreated, response)
 }
 
 func (h *FileHandler) GetFile(c *fiber.Ctx) error {
@@ -81,6 +83,5 @@ func (h *FileHandler) GetFile(c *fiber.Ctx) error {
 	}
 
 	c.Set("Content-Type", "application/octet-stream")
-
 	return c.Send(fileContent)
 }

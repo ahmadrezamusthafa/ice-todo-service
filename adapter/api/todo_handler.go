@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/dto"
-	"github.com/ahmadrezamusthafa/ice-todo-service/domain/entity"
+	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/dto/mapper"
 	"github.com/ahmadrezamusthafa/ice-todo-service/domain/validator"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/logger"
 	"github.com/ahmadrezamusthafa/ice-todo-service/usecase"
@@ -47,7 +47,7 @@ func (h *TodoHandler) CreateTodo(c *fiber.Ctx) error {
 		return dto.RespondWithError(c, fiber.StatusBadRequest, err.Error())
 	}
 
-	todo := entity.NewTodoItem(req.Description, req.DueDate, req.FileID)
+	todo := mapper.TodoRequestToEntity(&req)
 
 	createdTodo, err := h.todoUseCase.CreateTodo(todo)
 	if err != nil {
@@ -55,7 +55,8 @@ func (h *TodoHandler) CreateTodo(c *fiber.Ctx) error {
 		return dto.RespondWithError(c, fiber.StatusInternalServerError, "Failed to create todo item: internal server error")
 	}
 
-	return dto.RespondWithJSON(c, fiber.StatusCreated, createdTodo)
+	response := mapper.TodoEntityToResponse(createdTodo)
+	return dto.RespondWithJSON(c, fiber.StatusCreated, response)
 }
 
 func (h *TodoHandler) UpdateTodo(c *fiber.Ctx) error {
@@ -81,19 +82,15 @@ func (h *TodoHandler) UpdateTodo(c *fiber.Ctx) error {
 		if err := h.todoValidator.ValidateDescription(*req.Description); err != nil {
 			return dto.RespondWithError(c, fiber.StatusBadRequest, err.Error())
 		}
-		existingTodo.Description = *req.Description
 	}
 
 	if req.DueDate != nil {
 		if err := h.todoValidator.ValidateDueDate(*req.DueDate); err != nil {
 			return dto.RespondWithError(c, fiber.StatusBadRequest, err.Error())
 		}
-		existingTodo.DueDate = *req.DueDate
 	}
 
-	if req.FileID != "" {
-		existingTodo.FileID = req.FileID
-	}
+	existingTodo = mapper.UpdateTodoRequestToEntity(&req, existingTodo)
 
 	updatedTodo, err := h.todoUseCase.UpdateTodo(id, existingTodo)
 	if err != nil {
@@ -101,7 +98,8 @@ func (h *TodoHandler) UpdateTodo(c *fiber.Ctx) error {
 		return dto.RespondWithError(c, fiber.StatusInternalServerError, "Failed to update todo item: internal server error")
 	}
 
-	return dto.RespondWithJSON(c, fiber.StatusOK, updatedTodo)
+	response := mapper.TodoEntityToResponse(updatedTodo)
+	return dto.RespondWithJSON(c, fiber.StatusOK, response)
 }
 
 func (h *TodoHandler) GetTodo(c *fiber.Ctx) error {
@@ -117,7 +115,8 @@ func (h *TodoHandler) GetTodo(c *fiber.Ctx) error {
 		return dto.RespondWithError(c, fiber.StatusNotFound, "Todo item not found")
 	}
 
-	return dto.RespondWithJSON(c, fiber.StatusOK, todo)
+	response := mapper.TodoEntityToResponse(todo)
+	return dto.RespondWithJSON(c, fiber.StatusOK, response)
 }
 
 func (h *TodoHandler) GetAllTodos(c *fiber.Ctx) error {
@@ -127,7 +126,8 @@ func (h *TodoHandler) GetAllTodos(c *fiber.Ctx) error {
 		return dto.RespondWithError(c, fiber.StatusInternalServerError, "Failed to get todo items: internal server error")
 	}
 
-	return dto.RespondWithJSON(c, fiber.StatusOK, todos)
+	response := mapper.TodoEntitiesToResponse(todos)
+	return dto.RespondWithJSON(c, fiber.StatusOK, response)
 }
 
 func (h *TodoHandler) DeleteTodo(c *fiber.Ctx) error {
@@ -143,8 +143,6 @@ func (h *TodoHandler) DeleteTodo(c *fiber.Ctx) error {
 		return dto.RespondWithError(c, fiber.StatusInternalServerError, "Failed to delete todo item: internal server error")
 	}
 
-	return dto.RespondWithJSON(c, fiber.StatusOK, map[string]interface{}{
-		"message": "Todo item deleted successfully",
-		"id":      id.String(),
-	})
+	response := mapper.CreateDeleteResponse(id, "Todo item deleted successfully")
+	return dto.RespondWithJSON(c, fiber.StatusOK, response)
 }
