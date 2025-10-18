@@ -45,6 +45,16 @@ services:
       - "${TMPDIR:-/tmp}/localstack:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
 
+  migrate:
+    image: migrate/migrate
+    container_name: todo-migrate
+    volumes:
+      - ./infrastructure/migration:/migrations
+    command: [ "-path", "/migrations", "-database", "mysql://root:password@tcp(mysql:3306)/todo_db", "up" ]
+    depends_on:
+      mysql:
+        condition: service_healthy
+
 volumes:
   mysql-data:
   redis-data:
