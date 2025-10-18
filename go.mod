@@ -7,6 +7,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/gofiber/fiber/v2 v2.52.9
+	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
 	github.com/spf13/viper v1.21.0
 )
