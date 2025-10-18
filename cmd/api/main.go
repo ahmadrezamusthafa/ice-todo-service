@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/api"
 	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/persistence/mysql"
 	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/persistence/redis"
+	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/persistence/s3"
 	"github.com/ahmadrezamusthafa/ice-todo-service/config"
+	"github.com/ahmadrezamusthafa/ice-todo-service/domain/validator"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/database"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/logger"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/server"
@@ -41,17 +42,20 @@ func main() {
 		log.Fatal("Failed to connect to S3: %v", err)
 	}
 
+	fileValidator := validator.NewFileValidator()
+
 	todoRepo := mysql.NewTodoRepository(db)
 	streamRepo := redis.NewStreamRepository(redisClient)
+	fileRepo := s3.NewFileRepository(uploader, downloader, cfg.S3.Bucket)
 
 	todoUseCase := usecase.NewTodoUseCase(todoRepo, streamRepo, log)
+	fileUseCase := usecase.NewFileUseCase(fileRepo, log)
 
 	todoHandler := api.NewTodoHandler(todoUseCase, log)
-
-	fmt.Println(uploader, downloader)
+	fileHandler := api.NewFileHandler(fileUseCase, fileValidator.MaxFileSize, log)
 
 	srv := server.NewFiberServer(cfg, log)
-	srv.RegisterHandlers(todoHandler)
+	srv.RegisterHandlers(todoHandler, fileHandler)
 	if err := srv.Start(); err != nil {
 		log.Fatal("Server failed: %v", err)
 	}

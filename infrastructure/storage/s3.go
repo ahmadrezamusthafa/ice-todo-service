@@ -72,8 +72,8 @@ func (c *S3Connector) Connect() (*s3manager.Uploader, *s3manager.Downloader, err
 		_, err = s3Client.CreateBucket(createInput)
 		if err != nil {
 
-			if aerr, ok := err.(awserr.Error); ok {
-				switch aerr.Code() {
+			if aErr, ok := err.(awserr.Error); ok {
+				switch aErr.Code() {
 				case s3.ErrCodeBucketAlreadyExists, s3.ErrCodeBucketAlreadyOwnedByYou:
 					c.logger.Info("Bucket already exists: %s", c.config.S3.Bucket)
 				default:

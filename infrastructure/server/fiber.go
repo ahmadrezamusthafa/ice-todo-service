@@ -41,12 +41,13 @@ func NewFiberServer(config *config.Config, logger logger.Logger) *FiberServer {
 	}
 }
 
-func (s *FiberServer) RegisterHandlers(todoHandler *api.TodoHandler) {
+func (s *FiberServer) RegisterHandlers(todoHandler *api.TodoHandler, fileHandler *api.FileHandler) {
 	s.app.Use(cors.New())
 	s.app.Use(recover.New())
 	s.app.Use(createLoggerMiddleware(s.logger))
 
 	s.app.Post("/todo", todoHandler.CreateTodo)
+	s.app.Post("/upload", fileHandler.UploadFile)
 }
 
 func (s *FiberServer) Start() error {
