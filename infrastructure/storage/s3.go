@@ -26,6 +26,10 @@ func NewS3Connector(config *config.Config, logger logger.Logger) *S3Connector {
 	}
 }
 
+func (c *S3Connector) GetSession() *session.Session {
+	return c.session
+}
+
 func (c *S3Connector) Connect() (*s3manager.Uploader, *s3manager.Downloader, error) {
 	if c.uploader != nil && c.downloader != nil {
 		return c.uploader, c.downloader, nil
