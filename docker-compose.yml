@@ -55,6 +55,29 @@ services:
       mysql:
         condition: service_healthy
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: todo-app
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+      - AWS_ENDPOINT=http://localstack:4566
+    ports:
+      - "8080:8080"
+
 volumes:
   mysql-data:
   redis-data:
