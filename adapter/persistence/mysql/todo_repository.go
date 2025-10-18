@@ -1,0 +1,58 @@
+package mysql
+
+import (
+	"database/sql"
+	"github.com/ahmadrezamusthafa/ice-todo-service/domain/entity"
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type TodoRepository struct {
+	db *sql.DB
+}
+
+func NewTodoRepository(db *sql.DB) *TodoRepository {
+	return &TodoRepository{
+		db: db,
+	}
+}
+
+func (r *TodoRepository) Create(todo *entity.TodoItem) (*entity.TodoItem, error) {
+	query := `INSERT INTO todo_items (id, description, due_date, file_id) VALUES (?, ?, ?, ?)`
+
+	_, err := r.db.Exec(query, todo.ID.String(), todo.Description, todo.DueDate, todo.FileID)
+	if err != nil {
+		return nil, err
+	}
+
+	return todo, nil
+}
+
+func (r *TodoRepository) GetByID(id uuid.UUID) (*entity.TodoItem, error) {
+	query := `SELECT id, description, due_date, file_id FROM todo_items WHERE id = ?`
+
+	row := r.db.QueryRow(query, id.String())
+
+	var idStr string
+	var description string
+	var dueDate time.Time
+	var fileID string
+
+	err := row.Scan(&idStr, &description, &dueDate, &fileID)
+	if err != nil {
+		return nil, err
+	}
+
+	todoID, err := uuid.Parse(idStr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &entity.TodoItem{
+		ID:          todoID,
+		Description: description,
+		DueDate:     dueDate,
+		FileID:      fileID,
+	}, nil
+}

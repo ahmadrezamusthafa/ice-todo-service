@@ -6,6 +6,7 @@ require (
 	github.com/aws/aws-sdk-go v1.55.8
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-sql-driver/mysql v1.9.3
+	github.com/google/uuid v1.6.0
 	github.com/spf13/viper v1.21.0
 )
 

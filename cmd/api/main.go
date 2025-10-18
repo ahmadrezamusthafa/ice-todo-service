@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/persistence/mysql"
+	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/persistence/redis"
 	"github.com/ahmadrezamusthafa/ice-todo-service/config"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/database"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/logger"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/storage"
+	"github.com/ahmadrezamusthafa/ice-todo-service/usecase"
 )
 
 func main() {
@@ -36,6 +39,11 @@ func main() {
 		log.Fatal("Failed to connect to S3: %v", err)
 	}
 
+	todoRepo := mysql.NewTodoRepository(db)
+	streamRepo := redis.NewStreamRepository(redisClient)
+
+	todoUseCase := usecase.NewTodoUseCase(todoRepo, streamRepo, log)
+
 	fmt.Println(db, redisClient)
-	fmt.Println(uploader, downloader)
+	fmt.Println(uploader, downloader, todoUseCase)
 }

@@ -1,0 +1,11 @@
+package repository
+
+import (
+	"github.com/ahmadrezamusthafa/ice-todo-service/domain/entity"
+	"github.com/google/uuid"
+)
+
+type TodoRepository interface {
+	Create(todo *entity.TodoItem) (*entity.TodoItem, error)
+	GetByID(id uuid.UUID) (*entity.TodoItem, error)
+}
