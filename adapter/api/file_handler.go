@@ -67,3 +67,20 @@ func (h *FileHandler) UploadFile(c *fiber.Ctx) error {
 
 	return dto.RespondWithJSON(c, fiber.StatusCreated, map[string]string{"fileId": fileID})
 }
+
+func (h *FileHandler) GetFile(c *fiber.Ctx) error {
+	fileID := c.Params("id")
+	if fileID == "" {
+		return dto.RespondWithError(c, fiber.StatusBadRequest, "File ID is required")
+	}
+
+	fileContent, err := h.fileUseCase.GetFile(fileID)
+	if err != nil {
+		h.logger.Error("Failed to retrieve file with ID %s: %v", fileID, err)
+		return dto.RespondWithError(c, fiber.StatusNotFound, "File not found or could not be retrieved")
+	}
+
+	c.Set("Content-Type", "application/octet-stream")
+
+	return c.Send(fileContent)
+}

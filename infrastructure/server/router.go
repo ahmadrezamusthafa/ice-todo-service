@@ -18,4 +18,5 @@ func (s *FiberServer) RegisterHandlers(todoHandler *api.TodoHandler, fileHandler
 	s.app.Delete("/todo/:id", todoHandler.DeleteTodo)
 
 	s.app.Post("/upload", fileHandler.UploadFile)
+	s.app.Get("/file/:id", fileHandler.GetFile)
 }
