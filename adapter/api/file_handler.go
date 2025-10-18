@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/dto"
 	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/dto/mapper"
+	"github.com/ahmadrezamusthafa/ice-todo-service/domain/apperrors"
 	"github.com/ahmadrezamusthafa/ice-todo-service/domain/validator"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/logger"
 	"github.com/ahmadrezamusthafa/ice-todo-service/usecase"
@@ -15,6 +16,7 @@ type FileHandler struct {
 	fileUseCase   usecase.FileUseCaseInterface
 	fileValidator *validator.FileValidator
 	logger        logger.Logger
+	errorHandler  *ErrorHandler
 }
 
 func NewFileHandler(fileUseCase usecase.FileUseCaseInterface, maxFileSize int64, logger logger.Logger) *FileHandler {
@@ -22,6 +24,7 @@ func NewFileHandler(fileUseCase usecase.FileUseCaseInterface, maxFileSize int64,
 		fileUseCase:   fileUseCase,
 		fileValidator: validator.NewFileValidator(),
 		logger:        logger,
+		errorHandler:  NewErrorHandler(logger),
 	}
 }
 
@@ -40,30 +43,27 @@ func (h *FileHandler) GetLogger() logger.Logger {
 func (h *FileHandler) UploadFile(c *fiber.Ctx) error {
 	file, err := c.FormFile("file")
 	if err != nil {
-		h.logger.Error("Failed to get file from form: %v", err)
-		return dto.RespondWithError(c, fiber.StatusBadRequest, "No file provided or invalid file")
+		return h.errorHandler.Handle(c, apperrors.NewValidationError("No file provided or invalid file", err))
 	}
 
 	if err := h.fileValidator.ValidateFileSize(file.Size); err != nil {
-		return dto.RespondWithError(c, fiber.StatusBadRequest, err.Error())
+		return h.errorHandler.Handle(c, apperrors.NewValidationError("Invalid file size", err))
 	}
 
 	ext := filepath.Ext(file.Filename)
 	if err := h.fileValidator.ValidateFileType(ext); err != nil {
-		return dto.RespondWithError(c, fiber.StatusBadRequest, err.Error())
+		return h.errorHandler.Handle(c, apperrors.NewValidationError("Invalid file type", err))
 	}
 
 	src, err := file.Open()
 	if err != nil {
-		h.logger.Error("Failed to open uploaded file: %v", err)
-		return dto.RespondWithError(c, fiber.StatusInternalServerError, "Failed to process uploaded file")
+		return h.errorHandler.Handle(c, apperrors.NewInternalError("Failed to process uploaded file", err))
 	}
 	defer src.Close()
 
 	fileID, err := h.fileUseCase.UploadFile(file.Filename, file.Size, src)
 	if err != nil {
-		h.logger.Error("Failed to upload file %s: %v", file.Filename, err)
-		return dto.RespondWithError(c, fiber.StatusInternalServerError, "Failed to upload file: internal server error")
+		return h.errorHandler.Handle(c, err)
 	}
 
 	response := mapper.FileToUploadResponse(fileID, file)
@@ -73,13 +73,12 @@ func (h *FileHandler) UploadFile(c *fiber.Ctx) error {
 func (h *FileHandler) GetFile(c *fiber.Ctx) error {
 	fileID := c.Params("id")
 	if fileID == "" {
-		return dto.RespondWithError(c, fiber.StatusBadRequest, "File ID is required")
+		return h.errorHandler.Handle(c, apperrors.NewValidationError("File ID is required", nil))
 	}
 
 	fileContent, err := h.fileUseCase.GetFile(fileID)
 	if err != nil {
-		h.logger.Error("Failed to retrieve file with ID %s: %v", fileID, err)
-		return dto.RespondWithError(c, fiber.StatusNotFound, "File not found or could not be retrieved")
+		return h.errorHandler.Handle(c, err)
 	}
 
 	c.Set("Content-Type", "application/octet-stream")

@@ -3,6 +3,7 @@ package s3
 import (
 	"bytes"
 	"fmt"
+	"github.com/ahmadrezamusthafa/ice-todo-service/domain/apperrors"
 	"io"
 	"path/filepath"
 	"strings"
@@ -57,7 +58,7 @@ func (r *FileRepository) Upload(fileName string, fileSize int64, fileContent io.
 
 	content, err := io.ReadAll(fileContent)
 	if err != nil {
-		return "", fmt.Errorf("failed to read file content: %w", err)
+		return "", apperrors.NewStorageError("failed to read file content", err)
 	}
 
 	_, err = r.uploader.Upload(&s3manager.UploadInput{
@@ -71,9 +72,12 @@ func (r *FileRepository) Upload(fileName string, fileSize int64, fileContent io.
 	})
 	if err != nil {
 		if aErr, ok := err.(awserr.Error); ok {
-			return "", fmt.Errorf("failed to upload file to S3: %s - %s", aErr.Code(), aErr.Message())
+			return "", apperrors.NewStorageError(
+				fmt.Sprintf("failed to upload file to S3: %s - %s", aErr.Code(), aErr.Message()),
+				aErr,
+			)
 		}
-		return "", fmt.Errorf("failed to upload file to S3: %w", err)
+		return "", apperrors.NewStorageError("failed to upload file to S3", err)
 	}
 
 	return fileID, nil
@@ -90,14 +94,17 @@ func (r *FileRepository) Get(fileID string) ([]byte, error) {
 		if aErr, ok := err.(awserr.Error); ok {
 			switch aErr.Code() {
 			case s3.ErrCodeNoSuchKey:
-				return nil, fmt.Errorf("file not found: %s", fileID)
+				return nil, apperrors.NewNotFoundError(fmt.Sprintf("file with id %s not found", fileID), aErr)
 			case s3.ErrCodeNoSuchBucket:
-				return nil, fmt.Errorf("bucket not found: %s", r.bucketName)
+				return nil, apperrors.NewStorageError(fmt.Sprintf("bucket %s not found", r.bucketName), aErr)
 			default:
-				return nil, fmt.Errorf("failed to download file from S3: %s - %s", aErr.Code(), aErr.Message())
+				return nil, apperrors.NewStorageError(
+					fmt.Sprintf("failed to download file from S3: %s - %s", aErr.Code(), aErr.Message()),
+					aErr,
+				)
 			}
 		}
-		return nil, fmt.Errorf("failed to download file from S3: %w", err)
+		return nil, apperrors.NewStorageError("failed to download file from S3", err)
 	}
 
 	return buf.Bytes(), nil

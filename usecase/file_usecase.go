@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"fmt"
 	"github.com/ahmadrezamusthafa/ice-todo-service/domain/repository"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/logger"
 	"io"
@@ -30,7 +29,7 @@ func (uc *FileUseCase) UploadFile(fileName string, fileSize int64, fileContent i
 	fileID, err := uc.fileRepo.Upload(fileName, fileSize, fileContent)
 	if err != nil {
 		uc.logger.Error("Failed to upload file: %v", err)
-		return "", fmt.Errorf("failed to upload file: %w", err)
+		return "", err
 	}
 
 	uc.logger.Info("File uploaded successfully with ID: %s", fileID)
@@ -43,7 +42,7 @@ func (uc *FileUseCase) GetFile(fileID string) ([]byte, error) {
 	fileContent, err := uc.fileRepo.Get(fileID)
 	if err != nil {
 		uc.logger.Error("Failed to retrieve file: %v", err)
-		return nil, fmt.Errorf("failed to retrieve file: %w", err)
+		return nil, err
 	}
 
 	uc.logger.Info("File retrieved successfully, size: %d bytes", len(fileContent))

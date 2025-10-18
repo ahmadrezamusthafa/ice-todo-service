@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"github.com/ahmadrezamusthafa/ice-todo-service/domain/apperrors"
 	"github.com/ahmadrezamusthafa/ice-todo-service/domain/entity"
 	"github.com/ahmadrezamusthafa/ice-todo-service/domain/repository"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/logger"
@@ -38,6 +39,7 @@ func (uc *TodoUseCase) CreateTodo(todo *entity.TodoItem) (*entity.TodoItem, erro
 	_, err = uc.publishToStream(createdTodo)
 	if err != nil {
 		uc.logger.Error("Failed to publish todo to stream: %v", err)
+
 	}
 
 	return createdTodo, nil
@@ -52,6 +54,7 @@ func (uc *TodoUseCase) UpdateTodo(id uuid.UUID, todo *entity.TodoItem) (*entity.
 	_, err = uc.publishToStream(updatedTodo)
 	if err != nil {
 		uc.logger.Error("Failed to publish updated todo to stream: %v", err)
+
 	}
 
 	return updatedTodo, nil
@@ -73,7 +76,7 @@ func (uc *TodoUseCase) DeleteTodo(id uuid.UUID) error {
 
 	err = uc.todoRepo.Delete(id)
 	if err != nil {
-		return err
+		return apperrors.NewInternalError("Failed to delete todo", err)
 	}
 
 	data := map[string]interface{}{

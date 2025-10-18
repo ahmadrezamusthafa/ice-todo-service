@@ -2,6 +2,8 @@ package mysql
 
 import (
 	"database/sql"
+	"fmt"
+	"github.com/ahmadrezamusthafa/ice-todo-service/domain/apperrors"
 	"github.com/ahmadrezamusthafa/ice-todo-service/domain/entity"
 	"time"
 
@@ -23,7 +25,7 @@ func (r *TodoRepository) Create(todo *entity.TodoItem) (*entity.TodoItem, error)
 
 	_, err := r.db.Exec(query, todo.ID.String(), todo.Description, todo.DueDate, todo.FileID)
 	if err != nil {
-		return nil, err
+		return nil, apperrors.NewDatabaseError("failed to create todo item", err)
 	}
 
 	return todo, nil
@@ -41,12 +43,15 @@ func (r *TodoRepository) GetByID(id uuid.UUID) (*entity.TodoItem, error) {
 
 	err := row.Scan(&idStr, &description, &dueDate, &fileID)
 	if err != nil {
-		return nil, err
+		if err == sql.ErrNoRows {
+			return nil, apperrors.NewNotFoundError(fmt.Sprintf("todo item with id %s not found", id), err)
+		}
+		return nil, apperrors.NewDatabaseError("failed to get todo item", err)
 	}
 
 	todoID, err := uuid.Parse(idStr)
 	if err != nil {
-		return nil, err
+		return nil, apperrors.NewInternalError("failed to parse todo ID", err)
 	}
 
 	return &entity.TodoItem{
@@ -60,9 +65,18 @@ func (r *TodoRepository) GetByID(id uuid.UUID) (*entity.TodoItem, error) {
 func (r *TodoRepository) Update(id uuid.UUID, todo *entity.TodoItem) (*entity.TodoItem, error) {
 	query := `UPDATE todo_items SET description = ?, due_date = ?, file_id = ? WHERE id = ?`
 
-	_, err := r.db.Exec(query, todo.Description, todo.DueDate, todo.FileID, id.String())
+	result, err := r.db.Exec(query, todo.Description, todo.DueDate, todo.FileID, id.String())
 	if err != nil {
-		return nil, err
+		return nil, apperrors.NewDatabaseError("failed to update todo item", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return nil, apperrors.NewDatabaseError("failed to get rows affected", err)
+	}
+
+	if rowsAffected == 0 {
+		return nil, apperrors.NewNotFoundError(fmt.Sprintf("todo item with id %s not found", id), nil)
 	}
 
 	return todo, nil
@@ -73,7 +87,7 @@ func (r *TodoRepository) GetAll() ([]*entity.TodoItem, error) {
 
 	rows, err := r.db.Query(query)
 	if err != nil {
-		return nil, err
+		return nil, apperrors.NewDatabaseError("failed to query todo items", err)
 	}
 	defer rows.Close()
 
@@ -87,12 +101,12 @@ func (r *TodoRepository) GetAll() ([]*entity.TodoItem, error) {
 
 		err := rows.Scan(&idStr, &description, &dueDate, &fileID)
 		if err != nil {
-			return nil, err
+			return nil, apperrors.NewDatabaseError("failed to scan todo item", err)
 		}
 
 		todoID, err := uuid.Parse(idStr)
 		if err != nil {
-			return nil, err
+			return nil, apperrors.NewInternalError("failed to parse todo ID", err)
 		}
 
 		todos = append(todos, &entity.TodoItem{
@@ -104,7 +118,7 @@ func (r *TodoRepository) GetAll() ([]*entity.TodoItem, error) {
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, apperrors.NewDatabaseError("error iterating todo items", err)
 	}
 
 	return todos, nil
@@ -115,16 +129,16 @@ func (r *TodoRepository) Delete(id uuid.UUID) error {
 
 	result, err := r.db.Exec(query, id.String())
 	if err != nil {
-		return err
+		return apperrors.NewDatabaseError("failed to delete todo item", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return err
+		return apperrors.NewDatabaseError("failed to get rows affected", err)
 	}
 
 	if rowsAffected == 0 {
-		return sql.ErrNoRows
+		return apperrors.NewNotFoundError(fmt.Sprintf("todo item with id %s not found", id), nil)
 	}
 
 	return nil

@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/dto"
 	"github.com/ahmadrezamusthafa/ice-todo-service/adapter/dto/mapper"
+	"github.com/ahmadrezamusthafa/ice-todo-service/domain/apperrors"
 	"github.com/ahmadrezamusthafa/ice-todo-service/domain/validator"
 	"github.com/ahmadrezamusthafa/ice-todo-service/infrastructure/logger"
 	"github.com/ahmadrezamusthafa/ice-todo-service/usecase"
@@ -14,6 +15,7 @@ type TodoHandler struct {
 	todoUseCase   usecase.TodoUseCaseInterface
 	todoValidator *validator.TodoValidator
 	logger        logger.Logger
+	errorHandler  *ErrorHandler
 }
 
 func NewTodoHandler(todoUseCase usecase.TodoUseCaseInterface, logger logger.Logger) *TodoHandler {
@@ -21,6 +23,7 @@ func NewTodoHandler(todoUseCase usecase.TodoUseCaseInterface, logger logger.Logg
 		todoUseCase:   todoUseCase,
 		todoValidator: validator.NewTodoValidator(),
 		logger:        logger,
+		errorHandler:  NewErrorHandler(logger),
 	}
 }
 
@@ -35,24 +38,22 @@ func (h *TodoHandler) GetLogger() logger.Logger {
 func (h *TodoHandler) CreateTodo(c *fiber.Ctx) error {
 	var req dto.CreateTodoRequest
 	if err := c.BodyParser(&req); err != nil {
-		h.logger.Error("Failed to parse request body: %v", err)
-		return dto.RespondWithError(c, fiber.StatusBadRequest, "Invalid request body: "+err.Error())
+		return h.errorHandler.Handle(c, apperrors.NewValidationError("Invalid request body", err))
 	}
 
 	if err := h.todoValidator.ValidateDescription(req.Description); err != nil {
-		return dto.RespondWithError(c, fiber.StatusBadRequest, err.Error())
+		return h.errorHandler.Handle(c, apperrors.NewValidationError("Invalid description", err))
 	}
 
 	if err := h.todoValidator.ValidateDueDate(req.DueDate); err != nil {
-		return dto.RespondWithError(c, fiber.StatusBadRequest, err.Error())
+		return h.errorHandler.Handle(c, apperrors.NewValidationError("Invalid due date", err))
 	}
 
 	todo := mapper.TodoRequestToEntity(&req)
 
 	createdTodo, err := h.todoUseCase.CreateTodo(todo)
 	if err != nil {
-		h.logger.Error("Failed to create todo item: %v", err)
-		return dto.RespondWithError(c, fiber.StatusInternalServerError, "Failed to create todo item: internal server error")
+		return h.errorHandler.Handle(c, err)
 	}
 
 	response := mapper.TodoEntityToResponse(createdTodo)
@@ -63,30 +64,28 @@ func (h *TodoHandler) UpdateTodo(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		return dto.RespondWithError(c, fiber.StatusBadRequest, "Invalid todo ID format")
+		return h.errorHandler.Handle(c, apperrors.NewValidationError("Invalid todo ID format", err))
 	}
 
 	existingTodo, err := h.todoUseCase.GetTodoByID(id)
 	if err != nil {
-		h.logger.Error("Failed to get todo item: %v", err)
-		return dto.RespondWithError(c, fiber.StatusNotFound, "Todo item not found")
+		return h.errorHandler.Handle(c, err)
 	}
 
 	var req dto.UpdateTodoRequest
 	if err := c.BodyParser(&req); err != nil {
-		h.logger.Error("Failed to parse request body: %v", err)
-		return dto.RespondWithError(c, fiber.StatusBadRequest, "Invalid request body: "+err.Error())
+		return h.errorHandler.Handle(c, apperrors.NewValidationError("Invalid request body", err))
 	}
 
 	if req.Description != nil {
 		if err := h.todoValidator.ValidateDescription(*req.Description); err != nil {
-			return dto.RespondWithError(c, fiber.StatusBadRequest, err.Error())
+			return h.errorHandler.Handle(c, apperrors.NewValidationError("Invalid description", err))
 		}
 	}
 
 	if req.DueDate != nil {
 		if err := h.todoValidator.ValidateDueDate(*req.DueDate); err != nil {
-			return dto.RespondWithError(c, fiber.StatusBadRequest, err.Error())
+			return h.errorHandler.Handle(c, apperrors.NewValidationError("Invalid due date", err))
 		}
 	}
 
@@ -94,8 +93,7 @@ func (h *TodoHandler) UpdateTodo(c *fiber.Ctx) error {
 
 	updatedTodo, err := h.todoUseCase.UpdateTodo(id, existingTodo)
 	if err != nil {
-		h.logger.Error("Failed to update todo item: %v", err)
-		return dto.RespondWithError(c, fiber.StatusInternalServerError, "Failed to update todo item: internal server error")
+		return h.errorHandler.Handle(c, err)
 	}
 
 	response := mapper.TodoEntityToResponse(updatedTodo)
@@ -106,13 +104,12 @@ func (h *TodoHandler) GetTodo(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		return dto.RespondWithError(c, fiber.StatusBadRequest, "Invalid todo ID format")
+		return h.errorHandler.Handle(c, apperrors.NewValidationError("Invalid todo ID format", err))
 	}
 
 	todo, err := h.todoUseCase.GetTodoByID(id)
 	if err != nil {
-		h.logger.Error("Failed to get todo item: %v", err)
-		return dto.RespondWithError(c, fiber.StatusNotFound, "Todo item not found")
+		return h.errorHandler.Handle(c, err)
 	}
 
 	response := mapper.TodoEntityToResponse(todo)
@@ -122,8 +119,7 @@ func (h *TodoHandler) GetTodo(c *fiber.Ctx) error {
 func (h *TodoHandler) GetAllTodos(c *fiber.Ctx) error {
 	todos, err := h.todoUseCase.GetAllTodos()
 	if err != nil {
-		h.logger.Error("Failed to get all todo items: %v", err)
-		return dto.RespondWithError(c, fiber.StatusInternalServerError, "Failed to get todo items: internal server error")
+		return h.errorHandler.Handle(c, err)
 	}
 
 	response := mapper.TodoEntitiesToResponse(todos)
@@ -134,13 +130,12 @@ func (h *TodoHandler) DeleteTodo(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := uuid.Parse(idParam)
 	if err != nil {
-		return dto.RespondWithError(c, fiber.StatusBadRequest, "Invalid todo ID format")
+		return h.errorHandler.Handle(c, apperrors.NewValidationError("Invalid todo ID format", err))
 	}
 
 	err = h.todoUseCase.DeleteTodo(id)
 	if err != nil {
-		h.logger.Error("Failed to delete todo item: %v", err)
-		return dto.RespondWithError(c, fiber.StatusInternalServerError, "Failed to delete todo item: internal server error")
+		return h.errorHandler.Handle(c, err)
 	}
 
 	response := mapper.CreateDeleteResponse(id, "Todo item deleted successfully")
