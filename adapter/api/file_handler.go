@@ -11,12 +11,12 @@ import (
 )
 
 type FileHandler struct {
-	fileUseCase   *usecase.FileUseCase
+	fileUseCase   usecase.FileUseCaseInterface
 	fileValidator *validator.FileValidator
 	logger        logger.Logger
 }
 
-func NewFileHandler(fileUseCase *usecase.FileUseCase, maxFileSize int64, logger logger.Logger) *FileHandler {
+func NewFileHandler(fileUseCase usecase.FileUseCaseInterface, maxFileSize int64, logger logger.Logger) *FileHandler {
 	return &FileHandler{
 		fileUseCase:   fileUseCase,
 		fileValidator: validator.NewFileValidator(),
@@ -24,7 +24,7 @@ func NewFileHandler(fileUseCase *usecase.FileUseCase, maxFileSize int64, logger 
 	}
 }
 
-func (h *FileHandler) GetFileUseCase() *usecase.FileUseCase {
+func (h *FileHandler) GetFileUseCase() usecase.FileUseCaseInterface {
 	return h.fileUseCase
 }
 

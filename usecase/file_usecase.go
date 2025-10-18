@@ -7,12 +7,17 @@ import (
 	"io"
 )
 
+type FileUseCaseInterface interface {
+	UploadFile(fileName string, fileSize int64, fileContent io.Reader) (string, error)
+	GetFile(fileID string) ([]byte, error)
+}
+
 type FileUseCase struct {
 	fileRepo repository.FileRepository
 	logger   logger.Logger
 }
 
-func NewFileUseCase(fileRepo repository.FileRepository, logger logger.Logger) *FileUseCase {
+func NewFileUseCase(fileRepo repository.FileRepository, logger logger.Logger) FileUseCaseInterface {
 	return &FileUseCase{
 		fileRepo: fileRepo,
 		logger:   logger,

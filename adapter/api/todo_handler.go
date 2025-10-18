@@ -11,12 +11,12 @@ import (
 )
 
 type TodoHandler struct {
-	todoUseCase   *usecase.TodoUseCase
+	todoUseCase   usecase.TodoUseCaseInterface
 	todoValidator *validator.TodoValidator
 	logger        logger.Logger
 }
 
-func NewTodoHandler(todoUseCase *usecase.TodoUseCase, logger logger.Logger) *TodoHandler {
+func NewTodoHandler(todoUseCase usecase.TodoUseCaseInterface, logger logger.Logger) *TodoHandler {
 	return &TodoHandler{
 		todoUseCase:   todoUseCase,
 		todoValidator: validator.NewTodoValidator(),
@@ -24,7 +24,7 @@ func NewTodoHandler(todoUseCase *usecase.TodoUseCase, logger logger.Logger) *Tod
 	}
 }
 
-func (h *TodoHandler) GetTodoUseCase() *usecase.TodoUseCase {
+func (h *TodoHandler) GetTodoUseCase() usecase.TodoUseCaseInterface {
 	return h.todoUseCase
 }
 

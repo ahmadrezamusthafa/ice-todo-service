@@ -7,13 +7,21 @@ import (
 	"github.com/google/uuid"
 )
 
+type TodoUseCaseInterface interface {
+	CreateTodo(todo *entity.TodoItem) (*entity.TodoItem, error)
+	UpdateTodo(id uuid.UUID, todo *entity.TodoItem) (*entity.TodoItem, error)
+	GetTodoByID(id uuid.UUID) (*entity.TodoItem, error)
+	GetAllTodos() ([]*entity.TodoItem, error)
+	DeleteTodo(id uuid.UUID) error
+}
+
 type TodoUseCase struct {
 	todoRepo   repository.TodoRepository
 	streamRepo repository.StreamRepository
 	logger     logger.Logger
 }
 
-func NewTodoUseCase(todoRepo repository.TodoRepository, streamRepo repository.StreamRepository, logger logger.Logger) *TodoUseCase {
+func NewTodoUseCase(todoRepo repository.TodoRepository, streamRepo repository.StreamRepository, logger logger.Logger) TodoUseCaseInterface {
 	return &TodoUseCase{
 		todoRepo:   todoRepo,
 		streamRepo: streamRepo,
